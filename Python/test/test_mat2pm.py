@@ -2,6 +2,8 @@ import numpy as np
 from nose.tools import assert_equal
 from numpy.testing import assert_array_equal
 from principal_minor_calculations import mat2pm, _msb
+from cProfile import Profile
+from pstats import Stats
 
 
 def test_msb():
@@ -35,5 +37,17 @@ def test_mat2pm():
 
     n = 20
     m = np.random.rand(n, n)
+
+    do_profile = False
+    if do_profile:
+        profiler = Profile()
+        profiler.enable()
     pm = mat2pm(m)
+    if do_profile:
+        profiler.disable()
+        stats = Stats(profiler)
+        stats.strip_dirs()
+        stats.sort_stats('cumulative')
+        stats.print_stats()
+
     assert_equal(len(pm), 2**n - 1)
