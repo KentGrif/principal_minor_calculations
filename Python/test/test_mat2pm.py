@@ -1,7 +1,7 @@
 import numpy as np
 from nose.tools import assert_equal
-from numpy.testing import assert_array_equal
-from principal_minor_calculations import mat2pm, _msb
+from numpy.testing import assert_array_equal, assert_array_almost_equal
+from principal_minor_calculations import mat2pm, pm2mat, _msb
 from cProfile import Profile
 from pstats import Stats
 
@@ -35,6 +35,17 @@ def test_mat2pm():
     pm = mat2pm(m)
     assert_array_equal(pm, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1])
 
+    m = np.array([[-6, 3, -9, 4],
+                  [-6, -5, 3, 6],
+                  [3, -3, 6, -7],
+                  [1, 1, -1, -3]])
+    pm = mat2pm(m)
+    pm1 = [-6, -5, 48, 6, -9, -21, -36, -3, 14, 9, -94, -25, 96, 59, 6]
+    assert_array_almost_equal(pm, pm1, decimal=10)
+    m1 = pm2mat(pm)
+    pm2 = mat2pm(m1)
+    assert_array_almost_equal(pm2, pm1, decimal=10)
+
     n = 20
     m = np.random.rand(n, n)
 
@@ -42,7 +53,8 @@ def test_mat2pm():
     if do_profile:
         profiler = Profile()
         profiler.enable()
-    pm = mat2pm(m)
+    pm1 = mat2pm(m)
+    m1 = pm2mat(pm1)
     if do_profile:
         profiler.disable()
         stats = Stats(profiler)
@@ -50,4 +62,7 @@ def test_mat2pm():
         stats.sort_stats('cumulative')
         stats.print_stats()
 
-    assert_equal(len(pm), 2**n - 1)
+    pm2 = mat2pm(m1)
+    assert_equal(len(pm1), 2 ** n - 1)
+    assert_equal(len(pm2), 2 ** n - 1)
+    assert_array_almost_equal(pm1, pm2, decimal=8)
