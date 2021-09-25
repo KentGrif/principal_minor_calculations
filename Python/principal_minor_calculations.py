@@ -1,6 +1,10 @@
 import numpy as np
 
 
+# Default data type for computation
+DTYPE = np.cdouble     # complex number, represented by two double-precision floats
+
+
 def mat2pm(a: np.array, thresh=1e-5):
     """
     mat2pm returns a 2^n - 1 vector of all the principal minors of the matrix a.
@@ -12,6 +16,7 @@ def mat2pm(a: np.array, thresh=1e-5):
         pm: |a[1]|, |a[2]|, |a[1 2]|, |a[3]|, |a[1 3]|, |a[2 3]|, |a[1 2 3]|,...
     """
     assert(len(a.shape) == 2 and a.shape[0] == a.shape[1])
+    a = a.astype(DTYPE)
     n = a.shape[0]
     scale = np.sum(abs(a))/(n*n)    # average magnitude of matrix
     if scale == 0:
@@ -19,7 +24,7 @@ def mat2pm(a: np.array, thresh=1e-5):
     ppivot = scale              # value to use as a pivot if near 0 pivot arises
 
     zeropivs = []
-    pm = np.zeros(2**n - 1)     # where the principal minors are stored
+    pm = np.zeros(2**n - 1, dtype=DTYPE)     # where the principal minors are stored
     ipm = 0                     # index for storing principal minors
 
     # q is the input queue of unprocessed matrices
@@ -99,7 +104,7 @@ def _msb(x: int):
     return m
 
 
-def pm2mat(pm):
+def pm2mat(pm: np.array):
     """
     pm2mat Finds a real or complex matrix that has pm as its principal
     minors.
@@ -303,7 +308,7 @@ def pm2mat(pm):
             y_t = np.ones(m)
 
         x = b[:, idxmax] * _pivot / y_t[idxmax]
-        _a = np.zeros((m + 1, m + 1))
+        _a = np.zeros((m + 1, m + 1), dtype=DTYPE)
         _a[0, 0] = _pivot
         _a[0, 1:m + 1] = y_t
         _a[1:m + 1, 0] = x
@@ -358,7 +363,7 @@ def pm2mat(pm):
         return _t1, _t2
 
     myeps = 1e-10
-
+    pm = pm.astype(DTYPE)
     n = int(round(np.log2(len(pm)+1)))
 
     # Make first (smallest) entry of zeropivs an impossible index
@@ -395,15 +400,18 @@ def pm2mat(pm):
     ipm2 = 0
     for i in range(nq):
         if i == 0:
-            q[i] = np.array([[_pm[ipm1]]])
+            pivot = _pm[ipm1]
+            q[i] = np.array([[pivot]], dtype=DTYPE)
         else:
-            q[i] = np.array([[_pm[ipm1]/_pm[ipm2]]])
+            pivot = _pm[ipm1]/_pm[ipm2]
+            q[i] = np.array([[pivot]], dtype=DTYPE)
             ipm2 += 1
         ipm1 += 1
 
     #
     # Main 'level' loop
     #
+    pivmin = np.finfo(np.float64).max
     for level in range(n-2, -1, -1):  # just counts? = n-2:-1:0        # for consistency with mat2pm levels
         nq = len(q) // 2
         n1 = n1+1
@@ -419,6 +427,7 @@ def pm2mat(pm):
             else:
                 pivot = _pm[ipm1]/_pm[ipm2]
                 ipm2 -= 1
+            pivmin = min(pivmin, np.abs(pivot))
             qq[i] = _invschurc(pivot, q[i], q[i+nq])
             if zeropivsmax == ipm1:
                 qq[i][0][0] -= ppivot
@@ -428,9 +437,9 @@ def pm2mat(pm):
         q = qq
     a = q[0]
     _deskew(a)
-    warn = ''
+    warn = f'pm2mat: pseudo-pivoted {len(zeropivs)-1} times, smallest pivot used: {pivmin}'
     if warn_not_odf:
-        warn = 'pm2mat: off diagonal zeros found, solution suspect.'
+        warn = (warn + ';  ' if warn else '') + 'pm2mat: off diagonal zeros found, solution suspect.'
     if warn_under_determined:
         warn = (warn + ';  ' if warn else '') + 'pm2mat: multiple solutions to make rank(L-R)=1, solution suspect.'
     if warn_inconsistent:

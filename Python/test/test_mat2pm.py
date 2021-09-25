@@ -48,16 +48,23 @@ def test_mat2pm():
                             [1, 0, 0, 0]])
     assert_in('off diagonal zeros found', msg)
     assert_in('multiple solutions to make rank', msg)
-    pm_inconsistent = [-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8]
+    pm_inconsistent = np.array([-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8])
     m, msg = pm2mat(pm_inconsistent)
-    # assert_in('principal minors may be inconsistent', msg)  # Fails TODO complex vs real fields issue!
+    assert_in('principal minors may be inconsistent', msg)
+    pm, msg = mat2pm(m)
+    # all but two of the principal minors actually match
+    pm[12] = 0
+    pm[14] = 0
+    pm_inconsistent[12] = 0
+    pm_inconsistent[14] = 0
+    assert_array_almost_equal(pm, pm_inconsistent, decimal=10)
 
     m1 = np.array([[-6, 3, -9, 4],
                    [-6, -5, 3, 6],
                    [3, -3, 6, -7],
                    [1, 1, -1, -3]])
     pm1, msg = mat2pm(m1)
-    pm_truth = [-6, -5, 48, 6, -9, -21, -36, -3, 14, 9, -94, -25, 96, 59, 6]
+    pm_truth = np.array([-6, -5, 48, 6, -9, -21, -36, -3, 14, 9, -94, -25, 96, 59, 6])
     assert_equal(msg, 'mat2pm: pseudo-pivoted 0 times, smallest pivot used: 0.75')
     assert_array_almost_equal(pm1, pm_truth, decimal=10)
     m2, msg = pm2mat(pm_truth)
@@ -73,6 +80,7 @@ def test_mat2pm():
         profiler.enable()
     pm1, msg = mat2pm(m1)
     m2, msg = pm2mat(pm1)
+    # TODO warn_under_determined is usually set.  Bad threshold?
     if do_profile:
         profiler.disable()
         stats = Stats(profiler)
