@@ -143,8 +143,11 @@ def pm2mat(pm: np.array):
         nonlocal warn_under_determined
         nonlocal warn_inconsistent
 
-        myeps_i = 1e-3 * np.linalg.norm(_r, ord=np.inf)  # make these relative to magnitude of R
-        myeps_c = 1e-9 * np.linalg.norm(_r, ord=np.inf)
+        # max allowable ratio of nearly zero row value to next largest row value
+        myeps_i = 1e-3
+
+        # make this relative to magnitude of R
+        myeps_c = 1e-12 * np.linalg.norm(_r, ord=np.inf)
         m = _r.shape[0]
 
         # Try to make (L-R) rank 1
@@ -189,8 +192,8 @@ def pm2mat(pm: np.array):
                        (_l[i2, i1] - _r[i2, i1] * s2) * (_l[i1, i3] - _r[i1, i3] / t1))
             r222 = abs((_l[i2, i3] - _r[i2, i3] / r2) * (_l[i1, i1] - _r[i1, i1]) -
                        (_l[i2, i1] - _r[i2, i1] * s2) * (_l[i1, i3] - _r[i1, i3] / t2))
-            rv = [r111, r112, r121, r122, r211, r212, r221, r222]
-            mn = np.amin(rv)
+            rv = sorted([r111, r112, r121, r122, r211, r212, r221, r222])
+            mn = rv[0]
             if r111 == mn:
                 [r, s, t] = [r1, s1, t1]
             elif r112 == mn:
@@ -208,7 +211,7 @@ def pm2mat(pm: np.array):
             else:  # (r222 == mn)
                 [r, s, t] = [r2, s2, t2]
 
-            if mn > myeps_i:
+            if mn > rv[1] * myeps_i:
                 warn_inconsistent = True
 
             if np.count_nonzero(rv < myeps_c) > 1:
@@ -242,8 +245,8 @@ def pm2mat(pm: np.array):
                           (_l[i2, i1] - _r[i2, i1] * s2) * (_l[i1, i3] - _r[i1, i3] / t1))
                 r22 = abs((_l[i2, i3] - _r[i2, i3]) * (_l[i1, i1] - _r[i1, i1]) -
                           (_l[i2, i1] - _r[i2, i1] * s2) * (_l[i1, i3] - _r[i1, i3] / t2))
-                rv = [r11, r12, r21, r22]
-                mn = np.amin(rv)
+                rv = sorted([r11, r12, r21, r22])
+                mn = rv[0]
                 if r11 == mn:
                     [s, t] = [s1, t1]
                 elif r12 == mn:
@@ -253,7 +256,7 @@ def pm2mat(pm: np.array):
                 else:  # (r22 == mn)
                     [s, t] = [s2, t2]
 
-                if mn > myeps_i:
+                if mn > rv[1] * myeps_i:
                     warn_inconsistent = True
 
                 if np.count_nonzero(rv < myeps_c) > 1:
@@ -285,8 +288,9 @@ def pm2mat(pm: np.array):
                     else:
                         t = t2
 
-                    rv = [r1, r2]
-                    if mn > myeps_i:
+                    rv = sorted([r1, r2])
+                    mn = rv[0]
+                    if mn > rv[1] * myeps_i:
                         warn_inconsistent = True
 
                     if np.count_nonzero(rv < myeps_c) > 1:

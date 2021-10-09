@@ -80,7 +80,6 @@ def test_mat2pm():
         profiler.enable()
     pm1, msg = mat2pm(m1)
     m2, msg = pm2mat(pm1)
-    # TODO warn_under_determined is usually set.  Bad threshold?
     if do_profile:
         profiler.disable()
         stats = Stats(profiler)
