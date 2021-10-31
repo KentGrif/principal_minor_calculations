@@ -34,7 +34,7 @@ which are also available on the websites of the authors:
 
 ### Built With
 
-The original work was all done in MATLAB.  More recently, I've added a port of the two primary algorithms, MAT2PM and PM2MAT in Python.
+The original work was all done in MATLAB.  More recently, I've added a port of the two primary algorithms, MAT2PM and PM2MAT, in Python.
 
 * [MATLAB](https://www.mathworks.com/products/matlab.html)
 * [Python](https://www.python.org/)
